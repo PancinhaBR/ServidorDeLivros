@@ -2,61 +2,183 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro</title>
+    <title>Livraria - Cadastro e Lista de Livros</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h2>
-        Cadastro
-    </h2>
-
-    <form>
-            <label for="nome">Nome <input type="text" id="nome" name="nome"></label>
-            <label for="email">Email <input type="email" id="email" name="email"></label>
-            <label for="senha">Senha <input type="password" id="senha" name="senha"></label>
-            <label for="confirmar_senha">Confirmar Senha <input type="password" id="confirmar-senha" name="confirmar-senha"></label>
-            <button type="button" class="botao-cadastro" onclick="enviar()">Cadastrar</button>
-            <button type="button" class="botao-irParaLista" onclick="irParaLista()">Lista</button>
+    <h2 id="form-title">Cadastro de Livro</h2>
+    <form id="form-livro">
+        <input type="hidden" id="id-livro">
+        <label for="titulo">Título <input type="text" id="titulo" name="titulo"></label>
+        <label for="autor">Autor <input type="text" id="autor" name="autor"></label>
+        <label for="ano-publicacao">Ano de Publicação <input type="number" id="ano-publicacao" name="ano-publicacao"></label>
+        <label for="genero">Gênero <input type="text" id="genero" name="genero"></label>
+        <label for="idioma">Idioma <input type="text" id="idioma" name="idioma"></label>
+        <label for="preco">Preço <input type="number" step="0.01" id="preco" name="preco"></label>
+        <button type="button" id="btn-cadastrar" onclick="enviar()">Cadastrar</button>
+        <button type="button" id="btn-editar" onclick="editar()" style="display:none;">Salvar Edição</button>
+        <button type="button" onclick="limparFormulario()">Limpar</button>
     </form>
 
+    <h2>Lista de Livros</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Título</th>
+                <th>Autor</th>
+                <th>Ano de Publicação</th>
+                <th>Gênero</th>
+                <th>Idioma</th>
+                <th>Preço</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="tabela-livros">
+            <!-- Livros serão inseridos aqui -->
+        </tbody>
+    </table>
+
     <script>
-            function enviar(){
-                let inputNome = document.getElementById('nome').value;
-                let inputEmail = document.getElementById('email').value;
-                let inputSenha = document.getElementById('senha').value;
-                let inputConfirmarSenha = document.getElementById('confirmar-senha').value;
+        function carregarLivros() {
+            fetch("http://localhost:3000/livros")
+                .then(response => response.json())
+                .then(livros => {
+                    const tabela = document.getElementById("tabela-livros");
+                    tabela.innerHTML = "";
+                    livros.forEach(livro => {
+                        tabela.innerHTML += `
+                            <tr>
+                                <td>${livro.id}</td>
+                                <td>${livro.titulo}</td>
+                                <td>${livro.autor}</td>
+                                <td>${livro.ano_publicacao}</td>
+                                <td>${livro.genero}</td>
+                                <td>${livro.idioma}</td>
+                                <td>R$ ${Number(livro.preco).toFixed(2)}</td>
+                                <td>
+                                    <button onclick="selecionarLivro(${livro.id})">Ver</button>
+                                    <button onclick="prepararEdicao(${livro.id})">Editar</button>
+                                    <button onclick="excluirLivro(${livro.id})">Excluir</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
 
-                if(!inputNome || !inputEmail || !inputSenha){
-                    alert("Preencha os campos corretamente!");
-                    return;
-                }
-                
-                if(inputSenha !== inputConfirmarSenha){
-                    alert("As senhas não conferem");
-                    return;
-                }
-                
-                fetch("http://localhost:3000/usuarios", {
-                    method: "POST",
-                    headers: {"Content-type": "application/json"},
-                    body: JSON.stringify({
-                        nome: inputNome,
-                        email: inputEmail,
-                        senha: inputSenha
-                    })
+        function enviar(){
+            let titulo = document.getElementById('titulo').value;
+            let autor = document.getElementById('autor').value;
+            let ano_publicacao = document.getElementById('ano-publicacao').value;
+            let genero = document.getElementById('genero').value;
+            let idioma = document.getElementById('idioma').value;
+            let preco = document.getElementById('preco').value;
+
+            if(!titulo || !autor || !ano_publicacao || !genero || !idioma || !preco){
+                alert("Preencha todos os campos corretamente!");
+                return;
+            }
+            
+            fetch("http://localhost:3000/livros", {
+                method: "POST",
+                headers: {"Content-type": "application/json"},
+                body: JSON.stringify({
+                    titulo: titulo,
+                    autor: autor,
+                    ano_publicacao: ano_publicacao,
+                    genero: genero,
+                    idioma: idioma,
+                    preco: preco
                 })
+            })
+            .then(response => response.json())
+            .then(function (data) {
+                alert(`Livro cadastrado com sucesso!`);
+                limparFormulario();
+                carregarLivros();
+            })
+        }
 
-                //response (res)
+        function selecionarLivro(id){
+            fetch(`http://localhost:3000/livros/${id}`)
+                .then(response => response.json())
+                .then(livro => {
+                    alert(
+                        `ID: ${livro.id}\nTítulo: ${livro.titulo}\nAutor: ${livro.autor}\nAno: ${livro.ano_publicacao}\nGênero: ${livro.genero}\nIdioma: ${livro.idioma}\nPreço: R$ ${Number(livro.preco).toFixed(2)}`
+                    );
+                });
+        }
+
+        function prepararEdicao(id){
+            fetch(`http://localhost:3000/livros/${id}`)
+                .then(response => response.json())
+                .then(livro => {
+                    document.getElementById('id-livro').value = livro.id;
+                    document.getElementById('titulo').value = livro.titulo;
+                    document.getElementById('autor').value = livro.autor;
+                    document.getElementById('ano-publicacao').value = livro.ano_publicacao;
+                    document.getElementById('genero').value = livro.genero;
+                    document.getElementById('idioma').value = livro.idioma;
+                    document.getElementById('preco').value = livro.preco;
+                    document.getElementById('btn-cadastrar').style.display = "none";
+                    document.getElementById('btn-editar').style.display = "inline";
+                    document.getElementById('form-title').innerText = "Editar Livro";
+                });
+        }
+
+        function editar(){
+            let id = document.getElementById('id-livro').value;
+            let titulo = document.getElementById('titulo').value;
+            let autor = document.getElementById('autor').value;
+            let ano_publicacao = document.getElementById('ano-publicacao').value;
+            let genero = document.getElementById('genero').value;
+            let idioma = document.getElementById('idioma').value;
+            let preco = document.getElementById('preco').value;
+
+            fetch(`http://localhost:3000/livros/${id}`, {
+                method: "PUT",
+                headers: {"Content-type": "application/json"},
+                body: JSON.stringify({
+                    titulo: titulo,
+                    autor: autor,
+                    ano_publicacao: ano_publicacao,
+                    genero: genero,
+                    idioma: idioma,
+                    preco: preco
+                })
+            })
+            .then(response => response.json())
+            .then(function (data) {
+                alert("Livro editado com sucesso!");
+                limparFormulario();
+                carregarLivros();
+            });
+        }
+
+        function excluirLivro(id){
+            if(confirm("Deseja realmente excluir este livro?")){
+                fetch(`http://localhost:3000/livros/${id}`, {
+                    method: "DELETE"
+                })
                 .then(response => response.json())
                 .then(function (data) {
-                    alert(`Usuário com ID ${data.id} cadastrado`)
-                })
+                    alert(data.message || "Livro excluído!");
+                    carregarLivros();
+                });
             }
-            function irParaLista(){
-                window.location.href = "usuarios.html"
-            }
+        }
+
+        function limparFormulario(){
+            document.getElementById('form-livro').reset();
+            document.getElementById('id-livro').value = "";
+            document.getElementById('btn-cadastrar').style.display = "inline";
+            document.getElementById('btn-editar').style.display = "none";
+            document.getElementById('form-title').innerText = "Cadastro de Livro";
+        }
+
+        // Atualiza a tabela ao abrir a página
+        carregarLivros();
     </script>
 </body>
 </html>
