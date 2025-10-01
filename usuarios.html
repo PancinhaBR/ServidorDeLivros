@@ -4,114 +4,108 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usuários</title>
+    <title>Livros</title>
     <link rel="stylesheet" href="usuarios.css">
 </head>
 <body>
 
-    <h2>Lista de Usuários</h2>
+    <h2>Lista de Livros</h2>
 
-    <button class="btn-voltar" onclick="voltar()">voltar para cadastro</button>
+    <button class="btn-voltar" onclick="voltar()">Voltar para cadastro</button>
 
-    <table>
+    <table border="1">
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Nome</th>
-                <th>Email</th>
+                <th>Título</th>
+                <th>Autor</th>
+                <th>Ano de Publicação</th>
+                <th>Gênero</th>
+                <th>Idioma</th>
+                <th>Preço</th>
                 <th>Ações</th>
             </tr>
         </thead>
-
-        <tbody id="tabela">
-
+        <tbody id="tabela-livros">
+            <!-- Livros serão inseridos aqui -->
         </tbody>
-
     </table>
 
-
-
 <script>
-    //
-    function carregar(){
-        fetch('http://localhost:3000/usuarios')
+    function carregarLivros(){
+        fetch('http://localhost:3000/livros')
         .then(res => res.json())
-        .then(data => {
-            const tbody = document.getElementById('tabela')
-            tbody.innerHTML = ""
-        
-            data.forEach(user => {
-                const tr = document.createElement('tr')
-                
+        .then(livros => {
+            const tbody = document.getElementById('tabela-livros');
+            tbody.innerHTML = "";
+            livros.forEach(livro => {
+                const tr = document.createElement('tr');
                 tr.innerHTML = `
-                <td>${user.id}</td>
-                <td>${user.nome}</td>
-                <td>${user.email}</td>
-                <td>
-                    <button class="btn-editar" onclick="editar (${user.id})">Editar</button>
-                    <button class="btn-excluir" onclick="excluir (${user.id})">Excluir</button>
-                </td>
-                `
-
-                tbody.appendChild(tr)
-                
-                
+                    <td>${livro.id}</td>
+                    <td>${livro.titulo}</td>
+                    <td>${livro.autor}</td>
+                    <td>${livro.ano_publicacao}</td>
+                    <td>${livro.genero}</td>
+                    <td>${livro.idioma}</td>
+                    <td>R$ ${Number(livro.preco).toFixed(2)}</td>
+                    <td>
+                        <button onclick="verLivro(${livro.id})">Ver</button>
+                        <button onclick="editarLivro(${livro.id})">Editar</button>
+                        <button onclick="excluirLivro(${livro.id})">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
             });
-        })
+        });
     }
 
-    function excluir(idUsuario){
-        fetch(`http://localhost:3000/usuarios/${idUsuario}`,
-        {
-            "method" : "DELETE"
-        })
-        .then(() => { 
-            carregar()
-        })
-        
+    function verLivro(id){
+        fetch(`http://localhost:3000/livros/${id}`)
+            .then(res => res.json())
+            .then(livro => {
+                alert(
+                    `ID: ${livro.id}\nTítulo: ${livro.titulo}\nAutor: ${livro.autor}\nAno: ${livro.ano_publicacao}\nGênero: ${livro.genero}\nIdioma: ${livro.idioma}\nPreço: R$ ${Number(livro.preco).toFixed(2)}`
+                );
+            });
     }
 
-    function editar(idUsuario){
-        let novoNome = prompt ("Digite o nome: ")
-        let novoEmail = prompt ("Digite o Email ")
-        let novaSenha = prompt ("Digite o Senha")
+    function editarLivro(id){
+        let titulo = prompt("Digite o título:");
+        let autor = prompt("Digite o autor:");
+        let ano_publicacao = prompt("Digite o ano de publicação:");
+        let genero = prompt("Digite o gênero:");
+        let idioma = prompt("Digite o idioma:");
+        let preco = prompt("Digite o preço:");
 
-        if(novoNome.length < 1){
-            alert("Nome não pode estar vazio")
+        if(!titulo || !autor || !ano_publicacao || !genero || !idioma || !preco){
+            alert("Preencha todos os campos corretamente!");
             return;
         }
-        if(novoEmail.length < 1){
-        alert("Email não pode estar vazio")
-        return;
-        }
-        if(novaSenha.length < 1){
-        alert("Senha não pode estar vazia")
-        return;
-        }
 
-        console.log(novoNome,novoEmail,novaSenha);
-        fetch(`http://localhost:3000/usuarios/${idUsuario}`,
-        {
+        fetch(`http://localhost:3000/livros/${id}`, {
             method: "PUT",
-            headers:{
-                "Content-Type": "application/json"
-            },
+            headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
-                nome: novoNome,
-                email: novoEmail,
-                senha: novaSenha
+                titulo, autor, ano_publicacao, genero, idioma, preco
             })
         })
-        .then(() => carregar())
-        }
-    
-        function voltar(){
-            window.location.href = "index.html"
-        }
-    
+        .then(() => carregarLivros());
+    }
 
-window.onload = carregar
+    function excluirLivro(id){
+        if(confirm("Deseja realmente excluir este livro?")){
+            fetch(`http://localhost:3000/livros/${id}`, {
+                method: "DELETE"
+            })
+            .then(() => carregarLivros());
+        }
+    }
 
+    function voltar(){
+        window.location.href = "index.html";
+    }
+
+    window.onload = carregarLivros;
 </script>
 
 </body>
